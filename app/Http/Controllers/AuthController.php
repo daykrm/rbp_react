@@ -6,6 +6,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
 {
@@ -55,11 +56,19 @@ class AuthController extends Controller
 
     public function signup(Request $request)
     {
-        $request->validate([
+
+        $validator = Validator::make($request->all(), [
             'name' => 'required|string',
             'email' => 'required|string|email|unique:users',
             'password' => 'required|string|confirmed'
         ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => $validator
+            ], 500);
+        }
 
         $user = new User([
             'name' => $request->name,
@@ -69,7 +78,10 @@ class AuthController extends Controller
 
         $user->save();
 
-        return response()->json(['message', 'Successfully created user'], 201);
+        return response()->json([
+            'success' => true,
+            'message' => 'Registration Successful'
+        ], 200);
     }
 
     public function logout(Request $request)
