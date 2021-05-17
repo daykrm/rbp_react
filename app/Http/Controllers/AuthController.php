@@ -19,28 +19,38 @@ class AuthController extends Controller
         ]);
 
         $credentials = request(['email', 'password']);
+        $responseMessage = 'Invalid username or password';
 
-        if (!Auth::attempt($credentials)) return response()->json(['message', 'Unauthorized'], 401);
+        if (!Auth::attempt($credentials)) return response()->json([
+            'success' => false,
+            'message' => $responseMessage,
+            'error' => $responseMessage
+        ], 422);
 
         //Get current authenticated user
         $user = $request->user();
 
-        $tokenResult = $user->createToken('Personal Access Token');
-        $token = $tokenResult->token;
+        $accessToken = $user->createToken('authToken')->accessToken;
+        $responseMessage = 'Login Successfully';
 
-        if ($request->remember_me) $token->expires_at = Carbon::now()->addWeeks(1);
+        return $this->respondWithToken($accessToken, $responseMessage, $user);
 
-        $token->save();
+        // $tokenResult = $user->createToken('Personal Access Token');
+        // $token = $tokenResult->token;
 
-        $data = [
-            'access_token' => $tokenResult->accessToken,
-            'token_type' => 'Bearer',
-            'expires_at' => Carbon::parse(
-                $tokenResult->token->expires_at
-            )->toDateTimeString()
-        ];
+        // if ($request->remember_me) $token->expires_at = Carbon::now()->addWeeks(1);
 
-        return response()->json($data);
+        // $token->save();
+
+        // $data = [
+        //     'access_token' => $tokenResult->accessToken,
+        //     'token_type' => 'Bearer',
+        //     'expires_at' => Carbon::parse(
+        //         $tokenResult->token->expires_at
+        //     )->toDateTimeString()
+        // ];
+
+        // return response()->json($data);
     }
 
     public function signup(Request $request)
@@ -66,11 +76,18 @@ class AuthController extends Controller
     {
         $request->user()->token()->revoke();
 
-        return response()->json(['message', 'Successfully logged out']);
+        return response()->json([
+            'success' => true,
+            'message' => 'Successfully logged out'
+        ], 200);
     }
 
     public function user(Request $request)
     {
-        return response()->json($request->user());
+        return response()->json([
+            'success' => true,
+            'message' => 'User profile',
+            'data' => $request->user()
+        ], 200);
     }
 }
